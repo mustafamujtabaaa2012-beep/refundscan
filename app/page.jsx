@@ -1,413 +1,98 @@
-"use client";
+""use client";
+import React, { useState } from 'react';
+import { Upload, AlertCircle, CheckCircle2, DollarSign, FileText, ArrowRight } from 'lucide-react';
 
-/**
- * RefundScan.ai — app/page.jsx
- * Full dashboard: file upload → scan → results table → LemonSqueezy paywall
- * Stack: Next.js 14 App Router + Tailwind CSS
- *
- * HOW TO CONNECT LEMONSQUEEZY:
- *   1. Create a product at app.lemonsqueezy.com
- *   2. Copy the checkout URL (looks like: https://your-store.lemonsqueezy.com/checkout/buy/xxx)
- *   3. Replace LEMON_CHECKOUT_URL below with your real link
- */
+export default function RefundDashboard() {
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState(null);
 
-import { useState, useCallback, useRef } from "react";
-
-const LEMON_CHECKOUT_URL = "https://your-store.lemonsqueezy.com/checkout/buy/YOUR_PRODUCT_ID";
-
-// ─── Icons (inline SVG, no dep needed) ───────────────────────────
-const Icon = {
-  Upload: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-8 h-8">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Check: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Lock: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round"/>
-    </svg>
-  ),
-  Download: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  X: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-      <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/>
-    </svg>
-  ),
-};
-
-// ─── Drop Zone Component ──────────────────────────────────────────
-function DropZone({ label, hint, fileKey, file, onFile }) {
-  const [dragging, setDragging] = useState(false);
-  const inputRef = useRef();
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    const f = e.dataTransfer.files[0];
-    if (f?.name.endsWith(".csv")) onFile(fileKey, f);
-  };
+  const LEMON_CHECKOUT_URL = "https://lemonsqueezy.com";
 
   return (
-    <div
-      onClick={() => inputRef.current.click()}
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={handleDrop}
-      className={`
-        relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer
-        transition-all duration-200 select-none
-        ${file
-          ? "border-emerald-500 bg-emerald-50"
-          : dragging
-            ? "border-emerald-400 bg-emerald-50 scale-[1.01]"
-            : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50/40"
-        }
-      `}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files[0]; if (f) onFile(fileKey, f); }}
-      />
-      <div className={`transition-colors ${file ? "text-emerald-600" : "text-slate-400"}`}>
-        <Icon.Upload />
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans selection:bg-blue-500/30">
+      {/* Background Glow */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
       </div>
-      <div className="text-center">
-        <p className={`text-sm font-semibold ${file ? "text-emerald-700" : "text-slate-700"}`}>
-          {file ? file.name : label}
-        </p>
-        <p className="text-xs text-slate-400 mt-0.5">
-          {file ? "✓ Ready" : hint}
-        </p>
-      </div>
-    </div>
-  );
-}
 
-// ─── Hero Stat Card ───────────────────────────────────────────────
-function StatCard({ label, value, highlight }) {
-  return (
-    <div className={`rounded-xl p-4 border ${highlight
-      ? "border-emerald-200 bg-emerald-50"
-      : "border-slate-100 bg-white"}`}>
-      <p className="text-xs font-medium text-slate-400 tracking-wider uppercase mb-1">{label}</p>
-      <p className={`text-3xl font-bold tracking-tight ${highlight ? "text-emerald-700" : "text-slate-800"}`}>
-        {value ?? "—"}
-      </p>
-    </div>
-  );
-}
+      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold">R</div>
+            <span className="text-xl font-bold tracking-tight">Refund<span className="text-blue-500">Scan</span></span>
+          </div>
+          <button className="text-sm font-medium hover:text-blue-400 transition-colors">Documentation</button>
+        </div>
+      </nav>
 
-// ─── Paywall Modal ────────────────────────────────────────────────
-function PaywallModal({ open, onClose, amount }) {
-  if (!open) return null;
-  const formatted = amount != null ? `$${Number(amount).toFixed(2)}` : "$0.00";
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 relative animate-in fade-in zoom-in-95 duration-200">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
-        >
-          <Icon.X />
-        </button>
-
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 mb-4 mx-auto">
-          <Icon.Lock />
+      <main className="max-w-5xl mx-auto px-6 py-12">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent italic">
+            Recover Your Amazon Losses.
+          </h1>
+          <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+            Upload your Refund and Inventory reports. Our AI identifies unreturned items 
+            that Amazon owes you money for—in seconds.
+          </p>
         </div>
 
-        <h2 className="text-center text-2xl font-bold text-slate-900 leading-snug mb-1">
-          Claim your{" "}
-          <span className="text-emerald-600">{formatted}</span>
-        </h2>
-        <p className="text-center text-sm text-slate-500 mb-6 leading-relaxed">
-          Subscribe to download your full <strong>Claimable_Orders.csv</strong> and
-          submit directly to Amazon Seller Central.
-        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* Upload Card */}
+          <div className="bg-slate-900/40 border border-slate-800 p-8 rounded-3xl backdrop-blur-sm hover:border-slate-700 transition-all group">
+            <div className="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Upload className="text-blue-500" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-white">Upload Reports</h3>
+            <p className="text-slate-400 mb-6 text-sm">Select both Refund_Report.csv and Inventory_Ledger.csv</p>
+            <input type="file" multiple className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer" />
+            <button className="w-full mt-6 bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+              Start Analysis <ArrowRight size={18} />
+            </button>
+          </div>
 
-        <ul className="space-y-2.5 mb-6">
+          {/* Real-time Status Card */}
+          <div className="bg-slate-900/40 border border-slate-800 p-8 rounded-3xl backdrop-blur-sm flex flex-col justify-center items-center text-center">
+             {!results ? (
+               <>
+                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                  <FileText className="text-slate-600" />
+                </div>
+                <p className="text-slate-500 italic">Waiting for files...</p>
+               </>
+             ) : (
+               <div className="w-full space-y-6 text-left">
+                  <div className="flex justify-between items-center p-4 bg-green-500/10 border border-green-500/20 rounded-2xl">
+                    <span className="text-green-500 font-medium">Potential Refund</span>
+                    <span className="text-2xl font-bold text-green-400">$1,420.50</span>
+                  </div>
+                  <button onClick={() => window.location.href = LEMON_CHECKOUT_URL} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20">
+                    Claim Full Report Now
+                  </button>
+               </div>
+             )}
+          </div>
+        </div>
+
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            "Full CSV export — ready for Seller Central",
-            "Unlimited scans per month",
-            "45 & 90-day claim window detection",
-            "Priority email support",
-          ].map((feat) => (
-            <li key={feat} className="flex items-start gap-2.5 text-sm text-slate-700">
-              <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <Icon.Check />
-              </span>
-              {feat}
-            </li>
+            { icon: <CheckCircle2 className="text-green-500" />, title: "Accurate Data", desc: "Cross-references SKU & Order IDs." },
+            { icon: <DollarSign className="text-blue-500" />, title: "Instant ROI", desc: "Find lost money in under 60 seconds." },
+            { icon: <AlertCircle className="text-yellow-500" />, title: "Safe & Secure", desc: "We don't store your sensitive data." }
+          ].map((f, i) => (
+            <div key={i} className="p-6 bg-slate-900/20 border border-slate-800 rounded-2xl">
+              <div className="mb-3">{f.icon}</div>
+              <h4 className="font-bold text-white mb-1">{f.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
+            </div>
           ))}
-        </ul>
-
-        <p className="text-center text-xs text-slate-400 mb-4">
-          <span className="text-2xl font-bold text-slate-900">$29</span> / month · cancel anytime
-        </p>
-
-        <a
-          href={LEMON_CHECKOUT_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full text-center py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition mb-2"
-        >
-          Subscribe & Unlock Report →
-        </a>
-        <button
-          onClick={onClose}
-          className="block w-full text-center text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition"
-        >
-          Maybe later
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────
-export default function Home() {
-  const [files, setFiles]       = useState({ refund: null, ledger: null });
-  const [scanning, setScanning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [results, setResults]   = useState(null);
-  const [error, setError]       = useState(null);
-  const [modalOpen, setModal]   = useState(false);
-
-  const setFile = (key, file) => setFiles((prev) => ({ ...prev, [key]: file }));
-  const canScan = files.refund && files.ledger && !scanning;
-
-  const runScan = useCallback(async () => {
-    if (!canScan) return;
-    setScanning(true);
-    setError(null);
-    setResults(null);
-    setProgress(0);
-
-    // Animate progress bar while waiting
-    let p = 0;
-    const ticker = setInterval(() => {
-      p = Math.min(p + Math.random() * 15, 88);
-      setProgress(Math.round(p));
-    }, 200);
-
-    try {
-      const form = new FormData();
-      form.append("refund_report",    files.refund);
-      form.append("inventory_ledger", files.ledger);
-
-      const res  = await fetch("/api/scan", { method: "POST", body: form });
-      const data = await res.json();
-
-      clearInterval(ticker);
-      setProgress(100);
-
-      if (!data.success) throw new Error(data.error || "Scan failed");
-      setTimeout(() => { setResults(data); setScanning(false); setProgress(0); }, 500);
-    } catch (err) {
-      clearInterval(ticker);
-      setError(err.message);
-      setScanning(false);
-      setProgress(0);
-    }
-  }, [files, canScan]);
-
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      {/* ── Header ── */}
-      <header className="bg-white border-b border-slate-100 px-6 py-3.5 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-slate-900 tracking-tight">RefundScan</span>
-          <span className="text-[10px] font-semibold bg-emerald-600 text-white px-1.5 py-0.5 rounded">AI</span>
         </div>
-        <button
-          onClick={() => setModal(true)}
-          className="text-xs font-semibold px-4 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
-        >
-          Upgrade · $29/mo
-        </button>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* ── Hero Stats ── */}
-        <div className="grid grid-cols-3 gap-4">
-          <StatCard
-            label="Total Recoverable"
-            value={results ? `$${Number(results.total_recoverable).toFixed(2)}` : "—"}
-            highlight={!!results}
-          />
-          <StatCard
-            label="Orders Flagged"
-            value={results?.order_count ?? "—"}
-          />
-          <StatCard
-            label="Avg Loss / Order"
-            value={
-              results?.order_count
-                ? `$${(results.total_recoverable / results.order_count).toFixed(2)}`
-                : "—"
-            }
-          />
-        </div>
-
-        {/* ── Upload Section ── */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">
-            Upload Your Reports
-            <span className="ml-2 text-xs font-normal text-slate-400">CSV files only</span>
-          </h2>
-
-          <div className="grid grid-cols-2 gap-4 mb-5">
-            <DropZone
-              label="Refund Report"
-              hint="Drop Refund_Report.csv here"
-              fileKey="refund"
-              file={files.refund}
-              onFile={setFile}
-            />
-            <DropZone
-              label="Inventory Ledger"
-              hint="Drop Inventory_Ledger.csv here"
-              fileKey="ledger"
-              file={files.ledger}
-              onFile={setFile}
-            />
-          </div>
-
-          {/* Progress bar */}
-          {scanning && (
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-slate-400 mb-1">
-                <span>Scanning your data…</span>
-                <span>{progress}%</span>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-4 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-              ⚠ {error}
-            </div>
-          )}
-
-          <button
-            onClick={runScan}
-            disabled={!canScan}
-            className={`
-              w-full py-2.5 rounded-xl font-semibold text-sm transition
-              ${canScan
-                ? "bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"
-                : "bg-slate-100 text-slate-400 cursor-not-allowed"}
-            `}
-          >
-            {scanning ? "Processing…" : "Run Scan"}
-          </button>
-        </div>
-
-        {/* ── Results Table ── */}
-        {results && (
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-700">
-                Claimable Orders
-                <span className="ml-2 text-xs font-normal text-slate-400">
-                  {results.order_count} found
-                </span>
-              </h2>
-              <button
-                onClick={() => setModal(true)}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-700 transition"
-              >
-                <Icon.Download />
-                Download Report
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-400 uppercase tracking-wider text-[10px]">
-                    <th className="text-left px-3 py-2 rounded-l-lg">Order ID</th>
-                    <th className="text-left px-3 py-2">Product</th>
-                    <th className="text-left px-3 py-2">ASIN</th>
-                    <th className="text-center px-3 py-2">Days</th>
-                    <th className="text-left px-3 py-2">Status</th>
-                    <th className="text-right px-3 py-2 rounded-r-lg">Claimable</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.orders.map((row, i) => (
-                    <tr key={i} className="border-t border-slate-50 hover:bg-slate-50/60 transition">
-                      <td className="px-3 py-2.5 font-mono text-slate-500">{row.Order_ID}</td>
-                      <td className="px-3 py-2.5 font-medium text-slate-800 max-w-[160px] truncate">
-                        {row.Product_Name}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-slate-400">{row.ASIN}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className="bg-amber-50 text-amber-700 font-medium px-2 py-0.5 rounded-md">
-                          {row.Days_Since_Refund}d
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="bg-red-50 text-red-600 font-medium px-2 py-0.5 rounded-md">
-                          {row.Item_Status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-semibold font-mono text-emerald-700">
-                        ${Number(row.Total_Loss_USD).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-100">
-                    <td colSpan={5} className="px-3 py-2.5 text-xs font-semibold text-slate-500">
-                      Total Recoverable
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-base font-bold text-emerald-700">
-                      ${Number(results.total_recoverable).toFixed(2)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ── Empty State ── */}
-        {!results && !scanning && (
-          <div className="text-center py-12 text-slate-300">
-            <div className="text-5xl mb-3">⬆</div>
-            <p className="text-sm">Upload both CSV files and click Run Scan</p>
-          </div>
-        )}
       </main>
 
-      <PaywallModal
-        open={modalOpen}
-        onClose={() => setModal(false)}
-        amount={results?.total_recoverable}
-      />
+      <footer className="text-center py-12 text-slate-600 text-xs border-t border-slate-900 mt-12">
+        © 2024 RefundScan AI. Built for Amazon Sellers.
+      </footer>
     </div>
   );
 }
